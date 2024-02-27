@@ -1,0 +1,304 @@
+version: '2.2'
+services:
+    redis:
+        image: 'redis:5.0.5'
+        container_name: redis_celery
+        networks:
+            - my_network
+        command: [
+            "bash", "-c",
+            '
+            docker-entrypoint.sh
+            --requirepass $${REDIS_PASSWORD}
+            '
+        ]
+        restart: always
+        env_file:
+            - secrets/redis.env
+
+    postgres:
+        image: postgres:9.6
+        container_name: postgres_celery
+        restart: always
+        networks:
+            - my_network
+        command: postgres
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DB}
+            - PGDATA=${DB_VOLUME_CONTAINER}
+        env_file:
+            - secrets/postgres.env
+        volumes:
+            - "./data/postgres/db:${DB_VOLUME_CONTAINER}"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U airflow" ]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+
+
+    spark-master:
+        image: cluster-apache-spark:3.0.2 
+        container_name: spark-master
+        networks:
+        - my_network
+        ports:
+        - "9999:9999"
+        - "7077:7077"
+        volumes:
+        - ./data/spark/apps:/opt/spark-apps
+        - ./data/spark/data:/opt/spark-data
+        environment:
+        - SPARK_LOCAL_IP=spark-master
+        - SPARK_WORKLOAD=master
+        - SPARK_MASTER_PORT=7077
+        - SPARK_MASTER_WEBUI_PORT=9999
+        - JAVA_HOME=/usr/local/openjdk-11
+    
+    spark-worker-1:
+        image: cluster-apache-spark:3.0.2 
+        container_name: spark-worker-1
+        networks:
+        - my_network
+        ports:
+        - "9999"
+        depends_on:
+        - spark-master
+        environment:
+        - SPARK_MASTER=spark://spark-master:7077
+        - SPARK_WORKER_CORES=2
+        - SPARK_WORKER_MEMORY=2G
+        - SPARK_WORKLOAD=worker
+        - SPARK_LOCAL_IP=spark-worker-1
+        - SPARK_WORKER_WEBUI_PORT=9999
+        - JAVA_HOME=/usr/local/openjdk-11
+        volumes:
+        - ./data/spark/apps:/opt/spark-apps
+        - ./data/spark/data:/opt/spark-data
+  
+    # spark-worker-2:
+    #     image: cluster-apache-spark:3.0.2 
+    #     container_name: spark-worker-1
+    #     networks:
+    #     - my_network
+    #     ports:
+    #     - "9999"
+    #     depends_on:
+    #     - spark-master
+    #     environment:
+    #     - SPARK_MASTER=spark://spark-master:7077
+    #     - SPARK_WORKER_CORES=2
+    #     - SPARK_WORKER_MEMORY=2G
+    #     - SPARK_WORKLOAD=worker
+    #     - SPARK_LOCAL_IP=spark-worker-1
+    #     - SPARK_WORKER_WEBUI_PORT=9999
+    #     - JAVA_HOME=/usr/local/openjdk-11
+    #     volumes:
+    #     - ./data/spark/apps:/opt/spark-apps
+    #     - ./data/spark/data:/opt/spark-data
+
+    webserver:
+        image: jjerxawp-airflow
+        container_name: airflow_webserver
+        restart: always
+        networks:
+        - my_network
+        depends_on:
+            - postgres
+            - redis
+        environment:
+            - LOAD_EX=n
+            - INTEGRATION_MONGO=true
+            - EXECUTOR=Celery
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DB}
+            - PYTHONPATH=/usr/local/airflow/plugins
+            - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
+            - SPARK_HOME=/usr/local/spark/
+        env_file:
+            - secrets/fernet_key.env
+            - secrets/redis.env
+            - secrets/postgres.env
+            - .env
+        volumes:
+            - ./data/airflow/dags:/usr/local/airflow/dags
+            - ./data/airflow/store_files:/usr/local/airflow/store_files
+            - ./data/airflow/sql_files:/usr/local/airflow/sql_files
+            - ./data/airflow/plugins:/usr/local/airflow/plugins
+            - ./data/output_file:/usr/local/airflow/output_file
+            - ./data/spark_output:/opt/spark/spark_output
+            - ./data/airflow/spark/apps:/usr/local/spark_data/apps
+            - ./data/airflow/spark/data:/usr/local/spark_data/data
+            - ./data/airflow/scrapy:/usr/local/airflow/scrapy
+            - ./data/airflow/kafka_test:/usr/local/airflow/kafka_test
+        ports:
+            - "8080:8080"
+        command: webserver
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+
+    flower:
+        image: jjerxawp-airflow
+        container_name: flower_ui
+        restart: always
+        networks:
+        - my_network
+        depends_on:
+            - redis
+        environment:
+            - EXECUTOR=Celery
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DB}
+        env_file:
+            - secrets/redis.env
+            - secrets/postgres.env
+        ports:
+            - "5555:5555"
+        command: celery flower
+
+    scheduler:
+        image: jjerxawp-airflow
+        container_name: airflow_scheduler
+        networks:
+        - my_network
+        restart: always
+        depends_on:
+            - webserver
+        volumes:
+            - ./data/airflow/dags:/usr/local/airflow/dags
+            - ./data/airflow/store_files:/usr/local/airflow/store_files
+            - ./data/airflow/sql_files:/usr/local/airflow/sql_files
+            - ./data/airflow/plugins:/usr/local/airflow/plugins
+            - ./data/output_file:/usr/local/airflow/output_file
+            - ./data/spark_output:/opt/spark/spark_output
+            - ./data/airflow/spark/apps:/usr/local/spark_data/apps
+            - ./data/airflow/spark/data:/usr/local/spark_data/data
+            - ./data/airflow/scrapy:/usr/local/airflow/scrapy
+            - ./data/airflow/kafka_test:/usr/local/airflow/kafka_test
+        environment:
+            - LOAD_EX=n
+            - EXECUTOR=Celery
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DB}
+            - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
+            - SPARK_HOME=/usr/local/spark/
+        env_file:
+            - secrets/fernet_key.env
+            - secrets/redis.env
+            - secrets/postgres.env
+        command: scheduler
+
+    worker:
+        image: jjerxawp-airflow
+        container_name: airflow_worker
+        restart: always
+        networks:
+        - my_network
+        depends_on:
+            - scheduler
+        volumes:
+            - ./data/airflow/dags:/usr/local/airflow/dags
+            - ./data/airflow/store_files:/usr/local/airflow/store_files
+            - ./data/airflow/sql_files:/usr/local/airflow/sql_files
+            - ./data/airflow/plugins:/usr/local/airflow/plugins
+            - ./data/output_file:/usr/local/airflow/output_file
+            - ./data/spark_output:/opt/spark/spark_output
+            - ./data/airflow/spark/apps:/usr/local/spark_data/apps
+            - ./data/airflow/spark/data:/usr/local/spark_data/data
+            - ./data/airflow/scrapy:/usr/local/airflow/scrapy
+            - ./data/airflow/kafka_test:/usr/local/airflow/kafka_test
+        environment:
+            - EXECUTOR=Celery
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_DB=${POSTGRES_DB}
+            - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
+            - SPARK_HOME=/usr/local/spark/
+        env_file:
+            - secrets/fernet_key.env
+            - secrets/redis.env
+            - secrets/postgres.env
+        command: celery worker
+    
+    # mysql:
+    #     image: mysql:5.7.35
+    #     platform: linux/amd64
+    #     restart: always
+    #     networks:
+    #     - my_network
+    #     container_name: mysql
+    #     environment:
+    #         - MYSQL_ROOT_PASSWORD=root
+    #         - DEFAULT_AUTH=mysql_native_password
+    #         - MYSQL_USER=admin
+    #         - MYSQL_PASSWORD=admin
+    #     volumes:
+    #         # - ./data/mysql/mysql_conf/mysql.cnf:/etc/mysql/mysql.cnf
+    #         - ./data/mysql/mysql_scripts:/mysql_scripts
+    #         - ./data/mysql/logs:/var/log
+    #         - ./data/spark_output:/opt/spark/spark_output
+    
+    mongodb:
+        image: mongo:4.4.6
+        platform: linux/amd64
+        container_name: mongodb
+        networks:
+        - my_network
+        hostname: mongodb
+        restart: always
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=root
+            - MONGO_INITDB_ROOT_PASSWORD=root
+            - MONGO_INITDB_DATABASE=coingecko
+            - MONGO_INITDB_USER=mongodb
+            - MONGO_INITDB_PWD=mongodb
+        volumes:
+            - ./data/output_file:/output_file
+            - ./data/mongo/initdb.d/:/docker-entrypoint-initdb.d/
+        ports:
+            - "27017:27017"
+        command: mongod
+        
+    zookeeper:
+        image: wurstmeister/zookeeper
+        platform: linux/amd64
+        networks:
+            - my_network
+        container_name: zookeeper
+        ports:
+        - "2181:2181"
+    
+    kafka:
+        image: wurstmeister/kafka
+        networks:
+            - my_network
+        working_dir: "/opt/kafka_2.13-2.8.1/bin"
+        container_name: kafka
+        ports:
+        - "9092:9092"
+        - "29092:29092"
+        environment:
+            KAFKA_ADVERTISED_HOST_NAME: host.docker.internal
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://host.docker.internal:9092
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_CREATE_TOPICS: "markets:1:1:delete lists:1:1:delete"
+            KAFKA_AUTO_REGISTER_SCHEMAS: "false"
+            KAFKA_USE_LATEST_VERSION: "true"
+        depends_on:
+        - zookeeper
+          
+networks:
+  my_network:
+    driver: bridge
+
+
+# networks:
+  # default:
+    # external:
+      # name: "${DOCKER_NETWORK_NAME}"
