@@ -1,6 +1,10 @@
 # CryptoFlow
 
-"CryptoFlow" is a demonstration project illustrating the integration of diverse technologies to process cryptocurrency data seamlessly. Through the utilization of **Scrapy**, it gathers information from various cryptocurrency APIs, which is subsequently channeled to a Spark cluster via Kafka for streamlined processing. Airflow serves as the orchestration tool, managing the entire workflow. Leveraging **Docker**, deployment of key components such as **Airflow**, **Spark**, **MongoDB**, and **Kafka** is simplified. This project offers a tangible example of real-time cryptocurrency data processing for analytical insights.
+"CryptoFlow" is a demonstration project illustrating the integration of diverse technologies to process cryptocurrency data seamlessly. 
+
+Through the utilization of **Scrapy**, it gathers information from various cryptocurrency APIs, which is subsequently channeled to a Spark cluster via Kafka for streamlined processing. Airflow serves as the orchestration tool, managing the entire workflow. 
+
+Leveraging **Docker**, deployment of key components such as **Airflow**, **Spark**, **MongoDB**, and **Kafka** is simplified. This project offers a tangible example of real-time cryptocurrency data processing for analytical insights.
 ## Overview
 "CryptoFlow" is a demonstration project showcasing the seamless integration of various technologies for cryptocurrency data processing.
 
@@ -28,6 +32,8 @@ This setup ensures seamless orchestration of tasks, efficient message queuing, a
 
 ## Installation
 
+*Ensure Docker is installed on your system before running the provided commands. Adjust any configuration settings as needed before deployment.*
+
 1. Clone the repository:
 
    ```bash
@@ -48,6 +54,6 @@ This setup ensures seamless orchestration of tasks, efficient message queuing, a
 5. Run the compose file to spin up the entire stack:
    ```bash
    docker compose -f cryptoflow-compose-file.yml up -d
+6. Open your browser and navigate to localhost:8080 to access Airflow and log in.
 
-Ensure Docker is installed on your system before running the provided commands. Adjust any configuration settings as needed before deployment.
 
