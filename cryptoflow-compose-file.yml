@@ -223,24 +223,6 @@ services:
             - secrets/postgres.env
         command: celery worker
     
-    # mysql:
-    #     image: mysql:5.7.35
-    #     platform: linux/amd64
-    #     restart: always
-    #     networks:
-    #     - my_network
-    #     container_name: mysql
-    #     environment:
-    #         - MYSQL_ROOT_PASSWORD=root
-    #         - DEFAULT_AUTH=mysql_native_password
-    #         - MYSQL_USER=admin
-    #         - MYSQL_PASSWORD=admin
-    #     volumes:
-    #         # - ./data/mysql/mysql_conf/mysql.cnf:/etc/mysql/mysql.cnf
-    #         - ./data/mysql/mysql_scripts:/mysql_scripts
-    #         - ./data/mysql/logs:/var/log
-    #         - ./data/spark_output:/opt/spark/spark_output
-    
     mongodb:
         image: mongo:4.4.6
         platform: linux/amd64
@@ -296,9 +278,3 @@ services:
 networks:
   my_network:
     driver: bridge
-
-
-# networks:
-  # default:
-    # external:
-      # name: "${DOCKER_NETWORK_NAME}"
