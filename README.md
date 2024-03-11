@@ -13,11 +13,11 @@ This project serves as a practical example for how real-time cryptocurrency data
 ## Overall Architecture
 ![CryptoFlow-Architecture](https://private-user-images.githubusercontent.com/91967861/311826037-cdc1e338-10b9-4c35-89d9-0b3fbf0303f1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTAxODIxMzAsIm5iZiI6MTcxMDE4MTgzMCwicGF0aCI6Ii85MTk2Nzg2MS8zMTE4MjYwMzctY2RjMWUzMzgtMTBiOS00YzM1LTg5ZDktMGIzZmJmMDMwM2YxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAzMTElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMzExVDE4MzAzMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTZlNzdiNTQ5MDE3OTA3Y2U3Yjg0NzllMWMzYzUzYzZjMzUwNjRlZjY1MWU5NGIyZDhkZjc1YWZmYmQ5YmRhYzAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.74s6Yf-QOfYliEBJwDimHvQIARAvKIJttNcz_AUa2QI)
 
-In the Docker environment, our stack comprises Airflow running in Celery executor mode, leveraging Postgres and Redis as a queue for task management. 
+In the Docker environment, our stack comprises Airflow running in Celery executor mode, using Postgres as backend and Redis as a queue system for task management. 
 
-Additionally, Kafka is employed in a single Kafka single Zoo configuration to offload work, serving as a reliable messaging system. 
+Additionally, Kafka is employed in a single Kafka single Zookeeper configuration to offload work, serving as a reliable messaging system (can easily scale out by adding more Kafka server to the docker compose file). 
 
-As this is a demonstration project, a standalone Spark cluster is utilized for data processing, omitting Hadoop for simplicity. 
+As this is a demonstration project, a standalone Spark cluster is utilized for data processing, omitting Hadoop for simplicity. Besides, you can also easily scale out by adding more worker in the docker compose file. 
 
 Once processed, data is dumped into MongoDB for storage and further analysis. 
 
