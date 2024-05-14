@@ -11,7 +11,7 @@ Leveraging **Docker**, deployment of key components such as **Airflow**, **Spark
 This project serves as a practical example for how real-time cryptocurrency data can be captured and transformed for analytics.
 
 ## Overall Architecture
-![CryptoFlow-Architecture](https://private-user-images.githubusercontent.com/91967861/311942118-fa411aad-21fb-4ea6-91ab-9e7866588351.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTAyMTg1MDQsIm5iZiI6MTcxMDIxODIwNCwicGF0aCI6Ii85MTk2Nzg2MS8zMTE5NDIxMTgtZmE0MTFhYWQtMjFmYi00ZWE2LTkxYWItOWU3ODY2NTg4MzUxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAzMTIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMzEyVDA0MzY0NFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVjZTRiM2UwNzE5NzNiMmZhNmEzMmRkNzBjYWUyMGZhOTkyMDcwZTk3NWFkMWZhZTc3MWU0ZWEyZGYyMGIxYzUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.8iImjTnmu_skBmPSSHLUYRPvRqZpzjHYoSdqZQJfiVk)
+![CryptoFlow-Architecture](https://github.com/jjerxawp/CryptoFlow/blob/main/CryptoFlow.jpg)
 
 In the Docker environment, our stack comprises Airflow running in Celery executor mode, using Postgres as backend and Redis as a queue system for task management. 
 
